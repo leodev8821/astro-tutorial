@@ -3,6 +3,7 @@ import Layout from "../../layouts/Layout.astro";
 import { SHOW_BUY_BUTTON } from "astro:env/server";
 import { getCollection, render } from "astro:content";
 import BuyButton from "../../components/BuyButton.astro";
+import BookScore from "../../components/BookScore.astro";
 
 export async function getStaticPaths() {
     const books = await getCollection('books');
@@ -17,6 +18,8 @@ const { data, slug } = book;
 const { title, author, img, readtime, description, buy } = data;
 
 const { Content } = await render(book)
+
+export const prerender = true;
 ---
 
 <Layout title=`${title} - Dev Books`>
@@ -29,9 +32,14 @@ const { Content } = await render(book)
             src={`/${img}`} 
             alt={title}
             />
-            <span class="text-xs" id="score">
-
-            </span>
+            <BookScore server:defer id={slug}>
+                <span slot="fallback" class="text-xs opacity-70">Cargando Puntuación...</span>
+            </BookScore>
+            {
+                SHOW_BUY_BUTTON && <BuyButton server:defer buy={buy}>
+                    <span slot="fallback" class="text-sx opacity-70">Cargando botón...</span>
+                </BuyButton>
+            }
 
         </aside>
         <main class="max-w-3xl">
@@ -45,17 +53,3 @@ const { Content } = await render(book)
         </main>
     </div>
 </Layout>
-
-<script>
-    import { SCORE_API_ENDPOINT } from "astro:env/client";
-
-    const scoreElement = document.getElementById('score');
-
-    fetch(SCORE_API_ENDPOINT)
-    .then(res => res.text())
-    .then(scoreValue => {
-        if (scoreElement) {
-            scoreElement.innerHTML = `⭐ Puntuación: ${scoreValue.trim()}/5`;
-        }
-    })
-</script>
